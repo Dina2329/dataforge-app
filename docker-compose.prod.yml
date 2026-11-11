@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: dataforge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: dataforge
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dataforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  backend:
+    image: ${REGISTRY:?set REGISTRY in .env, e.g. docker.io/youruser}/dataforge-backend:${TAG:-latest}
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://dataforge:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/dataforge
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY in .env -- a Fernet key, see README}
+      CORS_ORIGINS: '["http://localhost"]'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - attachments:/app/data/attachments
+    restart: unless-stopped
+
+  arq-worker:
+    image: ${REGISTRY:?set REGISTRY in .env, e.g. docker.io/youruser}/dataforge-backend:${TAG:-latest}
+    command: arq app.worker.arq_app.WorkerSettings
+    environment:
+      DATABASE_URL: postgresql+asyncpg://dataforge:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/dataforge
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY in .env -- a Fernet key, see README}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    image: ${REGISTRY:?set REGISTRY in .env, e.g. docker.io/youruser}/dataforge-frontend:${TAG:-latest}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  attachments:

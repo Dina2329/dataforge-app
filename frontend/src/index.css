@@ -1,0 +1,220 @@
+@import "tailwindcss";
+
+/* Tailwind v4 defaults `dark:` to a `prefers-color-scheme` media query; this
+   swaps it for a class on <html> so the user's explicit light/dark/system
+   choice (themeStore.ts) — not just the OS setting — controls it. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------
+   DataForge design tokens ("Signal" palette)
+   Indigo accent (brand + primary actions) against cool slate neutrals, with
+   a separate cyan secondary accent for links/selection so the two never
+   compete -- replaces the earlier copper-on-warm-neutral "Forge" identity
+   with a cooler, more technical read. Named so both themes generate
+   ordinary Tailwind utilities (bg-canvas, text-ink-secondary, border-accent,
+   ...) via the @theme block below -- the actual per-theme values live in
+   the --df-* variables here, one level down, following the same
+   :root/.dark override pattern already used for --chart-*.
+   --------------------------------------------------------------------- */
+:root {
+  --df-canvas: #f8fafc;
+  --df-surface: #ffffff;
+  --df-surface-raised: #f1f5f9;
+  --df-border-default: #e2e8f0;
+  --df-border-strong: #cbd5e1;
+  --df-ink-primary: #0f172a;
+  --df-ink-secondary: #475569;
+  --df-ink-tertiary: #94a3b8;
+  --df-accent: #4f46e5;
+  --df-accent-hover: #4338ca;
+  --df-accent-tint: #4f46e51a;
+  --df-accent-secondary: #0891b2;
+  --df-accent-secondary-tint: #0891b21a;
+  --df-selection-tint: #0891b233;
+  --df-status-success: #16a34a;
+  --df-status-success-tint: #16a34a1a;
+  --df-status-warning: #d97706;
+  --df-status-warning-tint: #d977061a;
+  --df-status-info: #0891b2;
+  --df-status-info-tint: #0891b21a;
+  --df-status-danger: #dc2626;
+  --df-status-danger-tint: #dc26261a;
+
+  --chart-surface: #ffffff;
+  --chart-gridline: #e2e8f0;
+  --chart-axis-ink: #94a3b8;
+  --chart-secondary-ink: #475569;
+}
+
+.dark {
+  --df-canvas: #0a0f1c;
+  --df-surface: #131a2b;
+  --df-surface-raised: #1b2436;
+  --df-border-default: #232d42;
+  --df-border-strong: #3a4863;
+  --df-ink-primary: #f1f5f9;
+  --df-ink-secondary: #94a3b8;
+  --df-ink-tertiary: #64748b;
+  --df-accent: #818cf8;
+  --df-accent-hover: #a5b4fc;
+  --df-accent-tint: #818cf826;
+  --df-accent-secondary: #22d3ee;
+  --df-accent-secondary-tint: #22d3ee26;
+  --df-selection-tint: #22d3ee40;
+  --df-status-success: #4ade80;
+  --df-status-success-tint: #4ade8026;
+  --df-status-warning: #fbbf24;
+  --df-status-warning-tint: #fbbf2426;
+  --df-status-info: #22d3ee;
+  --df-status-info-tint: #22d3ee26;
+  --df-status-danger: #f87171;
+  --df-status-danger-tint: #f8717126;
+
+  --chart-surface: #131a2b;
+  --chart-gridline: #232d42;
+  --chart-axis-ink: #64748b;
+  --chart-secondary-ink: #94a3b8;
+}
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --color-canvas: var(--df-canvas);
+  --color-surface: var(--df-surface);
+  --color-surface-raised: var(--df-surface-raised);
+  --color-border-default: var(--df-border-default);
+  --color-border-strong: var(--df-border-strong);
+  --color-ink-primary: var(--df-ink-primary);
+  --color-ink-secondary: var(--df-ink-secondary);
+  --color-ink-tertiary: var(--df-ink-tertiary);
+  --color-accent: var(--df-accent);
+  --color-accent-hover: var(--df-accent-hover);
+  --color-accent-tint: var(--df-accent-tint);
+  --color-accent-secondary: var(--df-accent-secondary);
+  --color-accent-secondary-tint: var(--df-accent-secondary-tint);
+  --color-selection: var(--df-selection-tint);
+  --color-status-success: var(--df-status-success);
+  --color-status-success-tint: var(--df-status-success-tint);
+  --color-status-warning: var(--df-status-warning);
+  --color-status-warning-tint: var(--df-status-warning-tint);
+  --color-status-info: var(--df-status-info);
+  --color-status-info-tint: var(--df-status-info-tint);
+  --color-status-danger: var(--df-status-danger);
+  --color-status-danger-tint: var(--df-status-danger-tint);
+
+  /* Shared motion curve -- a swift-out ease (fast start, gentle settle) used
+     for every hover/press/enter transition in the app instead of each
+     component picking its own timing. Generates the `ease-snappy` utility. */
+  --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
+}
+
+body {
+  color-scheme: light dark;
+  font-family: var(--font-sans);
+  background-color: var(--color-canvas);
+  font-feature-settings: "tnum" 1;
+}
+
+@keyframes dialog-backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes dialog-panel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(4px);
+  }
+}
+
+.animate-dialog-backdrop {
+  animation: dialog-backdrop-in 150ms ease-out;
+}
+
+.animate-dialog-panel {
+  animation: dialog-panel-in 150ms ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+
+.animate-toast-in {
+  animation: toast-in 180ms ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+}
+
+/* Applied to a list/grid's real content the moment it replaces its loading
+   skeleton, so data doesn't just hard-swap into place. */
+.animate-fade-in {
+  animation: fade-in 220ms var(--ease-snappy);
+}
+
+@keyframes row-flash {
+  from {
+    background-color: var(--color-accent-secondary-tint);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+/* Applied to a just-created grid row for one pass, so a new row announces
+   itself instead of silently appearing at the next data refetch. */
+.animate-row-flash {
+  animation: row-flash 1200ms ease-out;
+}
+
+/* Dashboard builder drag-and-drop (react-grid-layout) */
+.react-grid-item.react-grid-placeholder {
+  background: rgba(79, 70, 229, 0.12);
+  border: 1.5px dashed rgba(79, 70, 229, 0.55);
+  border-radius: 12px;
+  opacity: 1;
+}
+
+.react-grid-item {
+  transition: transform 200ms ease, width 200ms ease, height 200ms ease, box-shadow 150ms ease;
+}
+
+.react-grid-item.react-draggable-dragging {
+  transition: box-shadow 150ms ease;
+  box-shadow: 0 12px 28px -8px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(79, 70, 229, 0.25);
+  cursor: grabbing;
+}
+
+.react-grid-item.resizing {
+  box-shadow: 0 8px 20px -6px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(79, 70, 229, 0.2);
+}
+
+.react-grid-item > .react-resizable-handle {
+  width: 18px;
+  height: 18px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.react-grid-item:hover > .react-resizable-handle,
+.react-grid-item.resizing > .react-resizable-handle {
+  opacity: 1;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  width: 7px;
+  height: 7px;
+  right: 5px;
+  bottom: 5px;
+  border-right: 2px solid rgba(79, 70, 229, 0.55);
+  border-bottom: 2px solid rgba(79, 70, 229, 0.55);
+}

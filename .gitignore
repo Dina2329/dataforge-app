@@ -1,0 +1,7 @@
+# Backup dumps and logs -- real data, never committed. scripts/backup.sh
+# and scripts/restore.sh themselves are still tracked.
+/backups/
+
+# Whole-project zip snapshots some other backup process drops in the repo
+# root from time to time -- never meant for git (hundreds of MB each).
+*.zip
