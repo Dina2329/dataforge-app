@@ -14,7 +14,6 @@ async def post_json(url: str, headers: dict[str, str] | None, payload: dict[str,
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=10))
 async def _post_json_response(client: httpx.AsyncClient, url: str, headers: dict[str, str] | None, payload: dict[str, Any]) -> httpx.Response:
-    print(url,payload)
     response = await client.post(url, json=payload, headers=headers or {})
     response.raise_for_status()
     return response
@@ -34,8 +33,16 @@ async def submit_and_await_result(
     then either uses its immediate response -- a fast API can reply with
     the full result body straight away, HTTP 200 -- or, on HTTP 202,
     switches to polling `GET {url}?job_id=...` every poll_interval seconds
-    (202 = still running, 200 = done) until ready or max_wait elapses."""
-    async with httpx.AsyncClient(timeout=15.0) as client:
+    (202 = still running, 200 = done) until ready or max_wait elapses.
+
+    A poll that times out or hits a transient network error (observed in
+    practice: a real external API occasionally takes 15-20s just to answer
+    "still running" over a slow link, not only to finish the actual lookup)
+    is treated the same as a 202 -- wait for the next interval and try
+    again -- rather than failing the whole job over one slow round trip.
+    Only exhausting max_wait, or the API returning a real error status, is
+    fatal."""
+    async with httpx.AsyncClient(timeout=30.0) as client:
         response = await _post_json_response(client, url, headers, payload)
         if response.status_code != 202:
             return response.json()
@@ -44,7 +51,10 @@ async def submit_and_await_result(
         while elapsed < max_wait:
             await asyncio.sleep(poll_interval)
             elapsed += poll_interval
-            response = await client.get(url, params={"job_id": job_id}, headers=headers or {})
+            try:
+                response = await client.get(url, params={"job_id": job_id}, headers=headers or {})
+            except httpx.TransportError:
+                continue
             if response.status_code == 202:
                 continue
             response.raise_for_status()

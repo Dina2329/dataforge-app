@@ -51,6 +51,30 @@ async def test_submit_and_await_result_polls_until_ready(monkeypatch):
     assert result == [{"sub_domain": "Alterations", "term_name": "Roof", "candidates": [{"Page": "4"}]}]
 
 
+async def test_submit_and_await_result_survives_a_transient_poll_timeout(monkeypatch):
+    # Regression: a real external API observed in practice can occasionally
+    # take longer than the client timeout just to answer a "still running?"
+    # status check -- that single slow/flaky poll must not fail the whole
+    # job, since there's still plenty of max_wait budget left to try again.
+    calls = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        if request.method == "POST":
+            return httpx.Response(202)
+        gets_so_far = len([c for c in calls if c.method == "GET"])
+        if gets_so_far == 1:
+            raise httpx.ReadTimeout("")
+        return httpx.Response(200, json=[{"sub_domain": "Alterations", "term_name": "Roof", "candidates": [{"Page": "4"}]}])
+
+    _patch_transport(monkeypatch, handler)
+
+    result = await submit_and_await_result("http://test/lookup", None, {"job_id": "j4", "rows": []}, job_id="j4", poll_interval=0)
+
+    assert len([c for c in calls if c.method == "GET"]) == 2
+    assert result == [{"sub_domain": "Alterations", "term_name": "Roof", "candidates": [{"Page": "4"}]}]
+
+
 async def test_submit_and_await_result_times_out_if_never_ready(monkeypatch):
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(202)

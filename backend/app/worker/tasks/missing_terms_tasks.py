@@ -96,7 +96,11 @@ async def run_missing_terms_job(ctx, job_id: str) -> None:
         except Exception as exc:
             await db.rollback()
             job.status = "failed"
-            job.error = str(exc)[:1000]
+            # Some exceptions (e.g. an httpx timeout raised internally with
+            # no message) stringify to "" -- fall back to the exception's
+            # type name so a failed job never ends up with a blank, useless
+            # error message.
+            job.error = (str(exc) or type(exc).__name__)[:1000]
             job.completed_at = datetime.now(timezone.utc)
             await db.commit()
             await NotificationService(db).create(

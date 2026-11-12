@@ -17,6 +17,7 @@ from app.modules.bulk_ops.api import router as bulk_ops_router
 from app.modules.connectors.api import router as connectors_router
 from app.modules.dashboards.api import router as dashboards_router
 from app.modules.dashboards.public_api import router as public_dashboards_router
+from app.modules.group_cleanup.api import router as group_cleanup_router
 from app.modules.missing_terms.api import router as missing_terms_router
 from app.modules.notifications.api import router as notifications_router
 from app.modules.record_submit.api import router as record_submit_router
@@ -83,3 +84,4 @@ app.include_router(snapshots_router)
 app.include_router(record_submit_router)
 app.include_router(missing_terms_router)
 app.include_router(batch_submit_router)
+app.include_router(group_cleanup_router)

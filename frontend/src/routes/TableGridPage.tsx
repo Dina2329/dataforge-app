@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Download,
   Filter,
+  FolderOutput,
   ListChecks,
   MoreHorizontal,
   Plus,
@@ -60,6 +61,7 @@ import { MissingTermsConfigDialog } from "../components/grid/MissingTermsConfigD
 import { MissingTermsPanel } from "../components/grid/MissingTermsPanel";
 import { JobsPanel } from "../components/grid/JobsPanel";
 import { JobResultsDialog } from "../components/grid/JobResultsDialog";
+import { GroupCleanupDialog } from "../components/grid/GroupCleanupDialog";
 import { ConfirmDeleteDialog } from "../components/shared/ConfirmDeleteDialog";
 import { Avatar } from "../components/ui/Avatar";
 import { Button } from "../components/ui/Button";
@@ -106,6 +108,7 @@ export function TableGridPage() {
   const [batchSubmitConfigOpen, setBatchSubmitConfigOpen] = useState(false);
   const [batchSubmitOpen, setBatchSubmitOpen] = useState(false);
   const [missingTermsConfigOpen, setMissingTermsConfigOpen] = useState(false);
+  const [groupCleanupOpen, setGroupCleanupOpen] = useState(false);
   const [missingTermsOpen, setMissingTermsOpen] = useState(false);
   const [missingTermsCollapsed, setMissingTermsCollapsed] = useState(false);
   const [jobResultsJobId, setJobResultsJobId] = useState<string | null>(null);
@@ -612,6 +615,11 @@ export function TableGridPage() {
                 <ListChecks className="size-4" /> Missing Terms config
               </DropdownItem>
             )}
+            {activeView?.view_type === "grid" && (
+              <DropdownItem onClick={() => setGroupCleanupOpen(true)}>
+                <FolderOutput className="size-4" /> Move to missing term
+              </DropdownItem>
+            )}
             <DropdownItem
               disabled={exportCsv.isPending}
               onClick={() => exportCsv.mutate()}
@@ -881,6 +889,9 @@ export function TableGridPage() {
           open={missingTermsConfigOpen}
           onClose={() => setMissingTermsConfigOpen(false)}
         />
+      )}
+      {tableId && (
+        <GroupCleanupDialog tableId={tableId} fields={fields} open={groupCleanupOpen} onClose={() => setGroupCleanupOpen(false)} />
       )}
       {tableId && (
         <JobResultsDialog
